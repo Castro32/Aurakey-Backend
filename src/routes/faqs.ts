@@ -64,18 +64,26 @@ router.post('/:id/items', protect, async (req: AuthRequest, res: Response): Prom
 router.put('/:id/items/:itemId', protect, async (req: AuthRequest, res: Response): Promise<void> => {
   const faq = await FAQCategory.findById(req.params.id);
   if (!faq) { res.status(404).json({ message: 'Not found' }); return; }
-  const item = faq.items.id(req.params.itemId);
+
+  const item = faq.items.find((i: any) => i._id.toString() === req.params.itemId);
   if (!item) { res.status(404).json({ message: 'Item not found' }); return; }
-  Object.assign(item, req.body);
+
+  if (req.body.question) item.question = req.body.question;
+  if (req.body.answer) item.answer = req.body.answer;
+  if (req.body.order !== undefined) item.order = req.body.order;
+
   await faq.save();
   res.json(faq);
 });
+
 
 // DELETE /api/faqs/:id/items/:itemId — delete item
 router.delete('/:id/items/:itemId', protect, async (req: AuthRequest, res: Response): Promise<void> => {
   const faq = await FAQCategory.findById(req.params.id);
   if (!faq) { res.status(404).json({ message: 'Not found' }); return; }
-  faq.items.pull({ _id: req.params.itemId });
+
+  faq.items = faq.items.filter((i: any) => i._id.toString() !== req.params.itemId) as any;
+
   await faq.save();
   res.json(faq);
 });

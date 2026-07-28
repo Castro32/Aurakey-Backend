@@ -31,7 +31,7 @@ router.post(
       const token = jwt.sign(
         { id: admin._id },
         process.env.JWT_SECRET as string,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+        { expiresIn: '7d' }
       );
 
       res.json({

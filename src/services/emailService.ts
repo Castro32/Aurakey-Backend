@@ -32,7 +32,7 @@ export const sendContactEmail = async (data: ContactData): Promise<void> => {
   await resend.emails.send({
     from: FROM,
     to: TO,
-    replyTo: data.email,
+    reply_to: data.email,
     subject: `New enquiry from ${data.firstName} ${data.lastName}`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
@@ -83,7 +83,7 @@ export const sendListingEmail = async (data: ListingData): Promise<void> => {
   await resend.emails.send({
     from: FROM,
     to: TO,
-    replyTo: data.email,
+    reply_to: data.email,
     subject: `New Property Listing Request — ${data.propertyType} in ${data.location}`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
