@@ -1,9 +1,81 @@
+// // import { Router, Response, Request } from 'express';
+// // import slugify from 'slugify';
+// // import BlogPost from '../models/BlogPost';
+// // import { protect, AuthRequest } from '../middleware/auth';
+
+// // const router = Router();
+
+// // // GET /api/blog — public (published)
+// // router.get('/', async (req: Request, res: Response) => {
+// //   const { category } = req.query;
+// //   const filter: Record<string, unknown> = { isPublished: true };
+// //   if (category) filter.category = category;
+// //   const posts = await BlogPost.find(filter).sort({ publishedAt: -1 }).select('-content');
+// //   res.json(posts);
+// // });
+
+// // // GET /api/blog/:slug — single post (public)
+// // router.get('/:slug', async (req: Request, res: Response): Promise<void> => {
+// //   const post = await BlogPost.findOne({ slug: req.params.slug, isPublished: true });
+// //   if (!post) { res.status(404).json({ message: 'Post not found' }); return; }
+// //   res.json(post);
+// // });
+
+// // // POST /api/blog — admin only
+// // router.post('/', protect, async (req: AuthRequest, res: Response): Promise<void> => {
+// //   const slug = slugify(req.body.title, { lower: true, strict: true });
+// //   const post = await BlogPost.create({ ...req.body, slug });
+// //   res.status(201).json(post);
+// // });
+
+// // // PUT /api/blog/:id — admin only
+// // router.put('/:id', protect, async (req: AuthRequest, res: Response): Promise<void> => {
+// //   if (req.body.title) req.body.slug = slugify(req.body.title, { lower: true, strict: true });
+// //   const post = await BlogPost.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+// //   if (!post) { res.status(404).json({ message: 'Not found' }); return; }
+// //   res.json(post);
+// // });
+
+// // // DELETE /api/blog/:id — admin only
+// // router.delete('/:id', protect, async (req: AuthRequest, res: Response): Promise<void> => {
+// //   const post = await BlogPost.findByIdAndDelete(req.params.id);
+// //   if (!post) { res.status(404).json({ message: 'Not found' }); return; }
+// //   res.json({ message: 'Post deleted' });
+// // });
+
+// // export default router;
 // import { Router, Response, Request } from 'express';
+// import multer from 'multer';
 // import slugify from 'slugify';
 // import BlogPost from '../models/BlogPost';
 // import { protect, AuthRequest } from '../middleware/auth';
 
 // const router = Router();
+
+// // const upload = multer({
+// //   storage: multer.memoryStorage(),
+// //   limits: { fileSize: 5 * 1024 * 1024 },
+// //   fileFilter: (_req, file, cb) => {
+// //     file.mimetype.startsWith('image/')
+// //       ? cb(null, true)
+// //       : cb(new Error('Only image files allowed'));
+// //   },
+// // });
+// const upload = multer({
+//   storage: multer.memoryStorage(),
+//   limits: {
+//     fileSize: 10 * 1024 * 1024,    // 10MB per file
+//     fieldSize: 50 * 1024 * 1024,   // 50MB for field values
+//   },
+//   fileFilter: (_req, file, cb) => {
+//     file.mimetype.startsWith('image/')
+//       ? cb(null, true)
+//       : cb(new Error('Only image files allowed'));
+//   },
+// });
+
+// const toBase64 = (file: Express.Multer.File): string =>
+//   `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
 
 // // GET /api/blog — public (published)
 // router.get('/', async (req: Request, res: Response) => {
@@ -22,19 +94,154 @@
 // });
 
 // // POST /api/blog — admin only
-// router.post('/', protect, async (req: AuthRequest, res: Response): Promise<void> => {
-//   const slug = slugify(req.body.title, { lower: true, strict: true });
-//   const post = await BlogPost.create({ ...req.body, slug });
-//   res.status(201).json(post);
-// });
+// router.post(
+//   '/',
+//   protect,
+//   upload.single('coverImage'),
+//   async (req: AuthRequest, res: Response): Promise<void> => {
+//     try {
+//       const slug = slugify(req.body.title, { lower: true, strict: true });
+
+//       // Parse author and tags — come as strings from form-data
+//       const author = req.body.author
+//         ? (typeof req.body.author === 'string' ? JSON.parse(req.body.author) : req.body.author)
+//         : { name: '', role: '' };
+
+//       const tags = req.body.tags
+//         ? (typeof req.body.tags === 'string' ? JSON.parse(req.body.tags) : req.body.tags)
+//         : [];
+
+//       const coverImage = req.file
+//         ? toBase64(req.file)
+//         : req.body.coverImage || '';
+
+//       const post = await BlogPost.create({
+//         ...req.body,
+//         slug,
+//         author,
+//         tags,
+//         coverImage,
+//         isPublished: req.body.isPublished === 'true' || req.body.isPublished === true,
+//       });
+
+//       res.status(201).json(post);
+//     } catch (error) {
+//       console.error('Blog create error:', error);
+//       res.status(500).json({ message: 'Failed to create post' });
+//     }
+//   }
+// );
 
 // // PUT /api/blog/:id — admin only
-// router.put('/:id', protect, async (req: AuthRequest, res: Response): Promise<void> => {
-//   if (req.body.title) req.body.slug = slugify(req.body.title, { lower: true, strict: true });
-//   const post = await BlogPost.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-//   if (!post) { res.status(404).json({ message: 'Not found' }); return; }
-//   res.json(post);
-// });
+// // router.put(
+// //   '/:id',
+// //   protect,
+// //   upload.single('coverImage'),
+// //   async (req: AuthRequest, res: Response): Promise<void> => {
+// //     try {
+// //       const updateData: Record<string, unknown> = { ...req.body };
+
+// //       if (req.body.title) {
+// //         updateData.slug = slugify(req.body.title, { lower: true, strict: true });
+// //       }
+
+// //       if (req.file) {
+// //         updateData.coverImage = toBase64(req.file);
+// //       }
+
+// //       if (req.body.author) {
+// //         updateData.author = typeof req.body.author === 'string'
+// //           ? JSON.parse(req.body.author)
+// //           : req.body.author;
+// //       }
+
+// //       if (req.body.tags) {
+// //         updateData.tags = typeof req.body.tags === 'string'
+// //           ? JSON.parse(req.body.tags)
+// //           : req.body.tags;
+// //       }
+
+// //       if (req.body.isPublished !== undefined) {
+// //         updateData.isPublished = req.body.isPublished === 'true' || req.body.isPublished === true;
+// //       }
+
+// //       const post = await BlogPost.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+// //       if (!post) { res.status(404).json({ message: 'Not found' }); return; }
+// //       res.json(post);
+// //     } catch (error) {
+// //       console.error('Blog update error:', error);
+// //       res.status(500).json({ message: 'Failed to update post' });
+// //     }
+// //   }
+// // );
+// // PUT /api/blog/:id — admin only
+// router.put(
+//   '/:id',
+//   protect,
+//   upload.single('coverImage'),
+//   async (req: AuthRequest, res: Response): Promise<void> => {
+//     try {
+//       const updateData: Record<string, unknown> = { ...req.body };
+
+//       // Only regenerate slug if title actually changed
+//       if (req.body.title) {
+//         const newSlug = slugify(req.body.title, { lower: true, strict: true });
+//         // Check if slug belongs to a DIFFERENT post before updating
+//         const existing = await BlogPost.findOne({ slug: newSlug });
+//         if (!existing || existing._id.toString() === req.params.id) {
+//           updateData.slug = newSlug;
+//         }
+//         // If slug belongs to another post, skip slug update (title stays, slug stays)
+//       } else {
+//         // No title change — don't touch the slug at all
+//         delete updateData.slug;
+//       }
+
+//       if (req.file) {
+//         updateData.coverImage = toBase64(req.file);
+//       }
+
+//       if (req.body.author) {
+//         updateData.author = typeof req.body.author === 'string'
+//           ? JSON.parse(req.body.author)
+//           : req.body.author;
+//       }
+
+//       if (req.body.tags) {
+//         updateData.tags = typeof req.body.tags === 'string'
+//           ? JSON.parse(req.body.tags)
+//           : req.body.tags;
+//       }
+
+//       if (req.body.isPublished !== undefined) {
+//         updateData.isPublished = req.body.isPublished === 'true' || req.body.isPublished === true;
+//       }
+
+//       // Remove slug from body spread to avoid accidental overwrite
+//       delete updateData.slug;
+      
+//       // Only set slug if we determined a valid new one above
+//       if (req.body.title) {
+//         const newSlug = slugify(req.body.title, { lower: true, strict: true });
+//         const existing = await BlogPost.findOne({ slug: newSlug, _id: { $ne: req.params.id } });
+//         if (!existing) {
+//           updateData.slug = newSlug;
+//         }
+//       }
+
+//       const post = await BlogPost.findByIdAndUpdate(
+//         req.params.id,
+//         updateData,
+//         { new: true, runValidators: true }
+//       );
+//       if (!post) { res.status(404).json({ message: 'Not found' }); return; }
+//       res.json(post);
+//     } catch (error) {
+//       console.error('Blog update error:', error);
+//       res.status(500).json({ message: 'Failed to update post' });
+//     }
+//   }
+// );
 
 // // DELETE /api/blog/:id — admin only
 // router.delete('/:id', protect, async (req: AuthRequest, res: Response): Promise<void> => {
@@ -52,32 +259,21 @@ import { protect, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// const upload = multer({
-//   storage: multer.memoryStorage(),
-//   limits: { fileSize: 5 * 1024 * 1024 },
-//   fileFilter: (_req, file, cb) => {
-//     file.mimetype.startsWith('image/')
-//       ? cb(null, true)
-//       : cb(new Error('Only image files allowed'));
-//   },
-// });
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024,    // 10MB per file
-    fieldSize: 50 * 1024 * 1024,   // 50MB for field values
+    fileSize: 10 * 1024 * 1024,
+    fieldSize: 50 * 1024 * 1024,
   },
   fileFilter: (_req, file, cb) => {
-    file.mimetype.startsWith('image/')
-      ? cb(null, true)
-      : cb(new Error('Only image files allowed'));
+    file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files allowed'));
   },
 });
 
 const toBase64 = (file: Express.Multer.File): string =>
   `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
 
-// GET /api/blog — public (published)
+// GET /api/blog — public (published only, no content field)
 router.get('/', async (req: Request, res: Response) => {
   const { category } = req.query;
   const filter: Record<string, unknown> = { isPublished: true };
@@ -86,7 +282,7 @@ router.get('/', async (req: Request, res: Response) => {
   res.json(posts);
 });
 
-// GET /api/blog/:slug — single post (public)
+// GET /api/blog/:slug — single post public
 router.get('/:slug', async (req: Request, res: Response): Promise<void> => {
   const post = await BlogPost.findOne({ slug: req.params.slug, isPublished: true });
   if (!post) { res.status(404).json({ message: 'Post not found' }); return; }
@@ -94,86 +290,77 @@ router.get('/:slug', async (req: Request, res: Response): Promise<void> => {
 });
 
 // POST /api/blog — admin only
-router.post(
-  '/',
-  protect,
-  upload.single('coverImage'),
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const slug = slugify(req.body.title, { lower: true, strict: true });
+router.post('/', protect, upload.single('coverImage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const slug = slugify(req.body.title, { lower: true, strict: true });
 
-      // Parse author and tags — come as strings from form-data
-      const author = req.body.author
-        ? (typeof req.body.author === 'string' ? JSON.parse(req.body.author) : req.body.author)
-        : { name: '', role: '' };
+    const author = req.body.author
+      ? (typeof req.body.author === 'string' ? JSON.parse(req.body.author) : req.body.author)
+      : { name: '', role: '' };
 
-      const tags = req.body.tags
-        ? (typeof req.body.tags === 'string' ? JSON.parse(req.body.tags) : req.body.tags)
-        : [];
+    const tags = req.body.tags
+      ? (typeof req.body.tags === 'string' ? JSON.parse(req.body.tags) : req.body.tags)
+      : [];
 
-      const coverImage = req.file
-        ? toBase64(req.file)
-        : req.body.coverImage || '';
+    const coverImage = req.file ? toBase64(req.file) : req.body.coverImage || '';
 
-      const post = await BlogPost.create({
-        ...req.body,
-        slug,
-        author,
-        tags,
-        coverImage,
-        isPublished: req.body.isPublished === 'true' || req.body.isPublished === true,
-      });
+    const post = await BlogPost.create({
+      ...req.body,
+      slug,
+      author,
+      tags,
+      coverImage,
+      isPublished: req.body.isPublished === 'true' || req.body.isPublished === true,
+    });
 
-      res.status(201).json(post);
-    } catch (error) {
-      console.error('Blog create error:', error);
-      res.status(500).json({ message: 'Failed to create post' });
-    }
+    res.status(201).json(post);
+  } catch (error) {
+    console.error('Blog create error:', error);
+    res.status(500).json({ message: 'Failed to create post' });
   }
-);
+});
 
 // PUT /api/blog/:id — admin only
-router.put(
-  '/:id',
-  protect,
-  upload.single('coverImage'),
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const updateData: Record<string, unknown> = { ...req.body };
+router.put('/:id', protect, upload.single('coverImage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const updateData: Record<string, unknown> = { ...req.body };
 
-      if (req.body.title) {
-        updateData.slug = slugify(req.body.title, { lower: true, strict: true });
-      }
-
-      if (req.file) {
-        updateData.coverImage = toBase64(req.file);
-      }
-
-      if (req.body.author) {
-        updateData.author = typeof req.body.author === 'string'
-          ? JSON.parse(req.body.author)
-          : req.body.author;
-      }
-
-      if (req.body.tags) {
-        updateData.tags = typeof req.body.tags === 'string'
-          ? JSON.parse(req.body.tags)
-          : req.body.tags;
-      }
-
-      if (req.body.isPublished !== undefined) {
-        updateData.isPublished = req.body.isPublished === 'true' || req.body.isPublished === true;
-      }
-
-      const post = await BlogPost.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
-      if (!post) { res.status(404).json({ message: 'Not found' }); return; }
-      res.json(post);
-    } catch (error) {
-      console.error('Blog update error:', error);
-      res.status(500).json({ message: 'Failed to update post' });
+    // Only update slug if title changed AND new slug doesn't belong to a different post
+    if (req.body.title) {
+      const newSlug = slugify(req.body.title, { lower: true, strict: true });
+      const conflict = await BlogPost.findOne({ slug: newSlug, _id: { $ne: req.params.id } });
+      if (!conflict) updateData.slug = newSlug;
+      else delete updateData.slug;
+    } else {
+      delete updateData.slug;
     }
+
+    if (req.file) updateData.coverImage = toBase64(req.file);
+
+    if (req.body.author) {
+      updateData.author = typeof req.body.author === 'string'
+        ? JSON.parse(req.body.author)
+        : req.body.author;
+    }
+
+    if (req.body.tags) {
+      updateData.tags = typeof req.body.tags === 'string'
+        ? JSON.parse(req.body.tags)
+        : req.body.tags;
+    }
+
+    if (req.body.isPublished !== undefined) {
+      updateData.isPublished = req.body.isPublished === 'true' || req.body.isPublished === true;
+    }
+
+    const post = await BlogPost.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+    if (!post) { res.status(404).json({ message: 'Not found' }); return; }
+    res.json(post);
+  } catch (error) {
+    console.error('Blog update error:', error);
+    res.status(500).json({ message: 'Failed to update post' });
   }
-);
+});
 
 // DELETE /api/blog/:id — admin only
 router.delete('/:id', protect, async (req: AuthRequest, res: Response): Promise<void> => {
