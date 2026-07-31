@@ -55,9 +55,22 @@ import { protect, AuthRequest } from '../middleware/auth';
 const router = Router();
 
 // Multer — memory storage, no Cloudinary
+// const upload = multer({
+//   storage: multer.memoryStorage(),
+//   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per image
+//   fileFilter: (_req, file, cb) => {
+//     file.mimetype.startsWith('image/')
+//       ? cb(null, true)
+//       : cb(new Error('Only image files allowed'));
+//   },
+// });
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per image
+  limits: {
+    fileSize: 10 * 1024 * 1024,    // 10MB per file
+    fieldSize: 50 * 1024 * 1024,   // 50MB for field values (covers Base64 strings)
+    files: 11,                      // max 10 images + 1 floorplan
+  },
   fileFilter: (_req, file, cb) => {
     file.mimetype.startsWith('image/')
       ? cb(null, true)
