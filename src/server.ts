@@ -24,7 +24,29 @@ connectDB();
 
 // Security
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://aurakey.vercel.app",
+];
+
+app.use(
+    cors({
+      origin: (origin, callback) => {
+    console.log("Incoming Origin:", origin);
+
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      console.log("CORS allowed:", origin);
+      return callback(null, true);
+    }
+
+    console.log("CORS blocked:", origin);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/api', apiLimiter);
