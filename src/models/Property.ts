@@ -90,7 +90,7 @@ const PropertySchema = new Schema<IProperty>(
     },
     city: {
       type: String,
-      enum: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ras Al Khaimah'],
+      enum: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ras Al Khaimah','Fujairah','Umm Al Quwain','Ajman'],
       required: true,
     },
     area: { type: String, required: true, trim: true },
