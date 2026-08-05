@@ -82,20 +82,15 @@ const PropertySchema = new Schema<IProperty>(
   {
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true },
-    developer: { type: String, required: true, trim: true },
-    propertyType: {
-      type: String,
-      enum: ['Apartment', 'Villa', 'Townhouse', 'Penthouse'],
-      required: true,
-    },
-    city: {
-      type: String,
-      enum: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ras Al Khaimah'],
-      required: true,
-    },
-    area: { type: String, required: true, trim: true },
-    startingPrice: { type: String, required: true },
-    paymentPlan: {
+    badge: { type: String, required: true },
+    address: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: String, required: true },
+    beds: { type: Number, required: true },
+    baths: { type: Number, required: true },
+    sqft: { type: String, required: true },
+    year: { type: Number, required: true },
+    type: {
       type: String,
       enum: ['60/40', '70/30', '80/20', '50/50', '1% Monthly', 'Custom'],
       required: true,
