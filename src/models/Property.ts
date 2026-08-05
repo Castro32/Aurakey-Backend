@@ -218,7 +218,7 @@ export interface IProperty extends Document {
   title: string;
   slug: string;
   developer: string;
-  propertyType: "Apartment" | "Villa" | "Townhouse" | "Penthouse";
+  propertyType: "Apartment" | "Villa" | "Townhouse" | "Penthouse" | "Duplex" | "Studio" | 'Plot';
   city:
     | "Dubai"
     | "Abu Dhabi"
@@ -270,7 +270,7 @@ const PropertySchema = new Schema<IProperty>(
 
     propertyType: {
       type: String,
-      enum: ["Apartment", "Villa", "Townhouse", "Penthouse"],
+      enum: ["Apartment", "Villa", "Townhouse", "Penthouse", "Duplex"],
       required: true,
     },
 
